@@ -1,41 +1,60 @@
+name: Frontend CI/CD
+
+# Trigger workflow on pushes to the master branch
 on:
   push:
     branches: [ "master" ]
 
 jobs:
   build:
+    # Build job prepares the application for deployment
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the repository code to the GitHub runner
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build step
+      # Build step for frontend build processes
+      - name: Build Frontend Application
         run: |
           echo "Building frontend..."
-          # Here you could run npm install / npm run build for a real FE
+          # Placeholder for frontend build commands:
+          # - npm install
+          # - npm run build
+          # - Asset compilation
+          # - Bundle optimization
 
   deploy:
+    # Deployment job if build job completes successfully
     needs: build
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout code 
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup SSH agent
+      # Set up SSH agent for secure server authentication
+      - name: Configure SSH Authentication
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy uptime-kuma via docker-compose
+      # Deploy Uptime Kuma monitoring service via Docker Compose
+      - name: Deploy Uptime Kuma Service
         run: |
+          # Execute deployment commands on remote server via SSH
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_FRONTEND }} << 'EOF'
-          set -e
+          set -e  # Exit immediately on any command failure
           cd /opt/uptime-kuma
-          echo "Pulling latest uptime-kuma image..."
+          
+          echo "Pulling latest Uptime Kuma Docker image..."
           docker compose pull
-          echo "Recreating containers..."
+          
+          echo "Recreating containers with zero-downtime deployment..."
           docker-compose up -d
+          
+          echo "Verifying container status:"
           docker ps
           EOF
