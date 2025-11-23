@@ -1,0 +1,43 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build step
+        run: |
+          echo "Building frontend..."
+          # Here you could run npm install / npm run build for a real FE
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy uptime-kuma via docker-compose
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_FRONTEND }} << 'EOF'
+          set -e
+          cd /opt/uptime-kuma
+          echo "Pulling latest uptime-kuma image..."
+          docker compose pull
+          echo "Recreating containers..."
+          docker-compose up -d
+          docker ps
+          EOF
